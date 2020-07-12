@@ -21,6 +21,8 @@
             <property name="height_request">100</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
             <property name="border_width">1</property>
             <property name="orientation">vertical</property>
             <child>
@@ -35,7 +37,7 @@
                     <property name="margin_right">5</property>
                     <property name="margin_top">5</property>
                     <property name="margin_bottom">5</property>
-                    <property name="label" translatable="yes">分类：</property>
+                    <property name="label" translatable="yes">类型：</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -53,10 +55,14 @@
                     <property name="margin_bottom">5</property>
                     <property name="active">0</property>
                     <items>
-                      <item id="&lt;输入 ID&gt;" translatable="yes">fix</item>
+                      <item translatable="yes">fix</item>
                       <item translatable="yes">feat</item>
-                      <item translatable="yes">doc</item>
                       <item translatable="yes">chore</item>
+                      <item translatable="yes">docs</item>
+                      <item translatable="yes">style</item>
+                      <item translatable="yes">refactor</item>
+                      <item translatable="yes">perf</item>
+                      <item translatable="yes">test</item>
                     </items>
                   </object>
                   <packing>
@@ -73,7 +79,7 @@
                     <property name="margin_right">5</property>
                     <property name="margin_top">5</property>
                     <property name="margin_bottom">5</property>
-                    <property name="label" translatable="yes">模块：</property>
+                    <property name="label" translatable="yes">作用域：</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -82,7 +88,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEntry" id="entryModule">
+                  <object class="GtkEntry" id="entryScope">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="margin_left">5</property>
@@ -158,6 +164,7 @@
                   <object class="GtkScrolledWindow">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="vscrollbar_policy">always</property>
                     <property name="shadow_type">in</property>
                     <child>
                       <object class="GtkTextView" id="tvDesc">
@@ -342,6 +349,8 @@
             <property name="height_request">-1</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
             <property name="label_xalign">0</property>
             <property name="shadow_type">none</property>
             <child>
@@ -353,6 +362,9 @@
                   <object class="GtkTextView" id="tvPreview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="editable">False</property>
+                    <property name="cursor_visible">False</property>
+                    <property name="monospace">True</property>
                   </object>
                 </child>
               </object>
@@ -366,7 +378,7 @@
             </child>
           </object>
           <packing>
-            <property name="expand">False</property>
+            <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">1</property>
           </packing>

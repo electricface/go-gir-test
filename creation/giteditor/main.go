@@ -10,11 +10,11 @@ import (
 )
 
 type State struct {
-	typ    string
-	module string
-	title  string
-	desc   string
-	log    string
+	typ   string
+	scope string
+	title string
+	desc  string
+	log   string
 
 	updateFn func(string)
 }
@@ -22,17 +22,18 @@ type State struct {
 func (s *State) handleAction(act interface{}) {
 	switch a := act.(type) {
 	case *actionUpdate:
+		value := strings.TrimSpace(a.value)
 		switch a.prop {
 		case "type":
-			s.typ = a.value
-		case "module":
-			s.module = a.value
+			s.typ = value
+		case "scope":
+			s.scope = value
 		case "title":
-			s.title = a.value
+			s.title = value
 		case "desc":
-			s.desc = a.value
+			s.desc = value
 		case "log":
-			s.log = a.value
+			s.log = value
 		}
 		s.updatePreview()
 	}
@@ -40,11 +41,18 @@ func (s *State) handleAction(act interface{}) {
 
 func (s *State) updatePreview() {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s(%s): %s\n", s.typ, s.module, s.title))
+	module := ""
+	if s.scope != "" {
+		module = "(" + s.scope + ")"
+	}
+	sb.WriteString(fmt.Sprintf("%s%s: %s\n", s.typ, module, s.title))
 	sb.WriteString("\n")
 	sb.WriteString(s.desc + "\n")
 	sb.WriteString("\n")
-	sb.WriteString("Log: " + s.log + "\n")
+
+	if s.log != "" {
+		sb.WriteString("Log: " + s.log + "\n")
+	}
 
 	text := sb.String()
 	s.updateFn(text)
@@ -56,7 +64,6 @@ type actionUpdate struct {
 
 func buildUI() gtk.Window {
 	state := &State{}
-	//win := gtk.NewWindow(gtk.WindowTypeToplevel)
 	builder := gtk.NewBuilder()
 	_, err := builder.AddFromFile("./ui.glade")
 	if err != nil {
@@ -79,12 +86,12 @@ func buildUI() gtk.Window {
 		})
 	})
 
-	entryModule := gtk.WrapEntry(builder.GetObject("entryModule").P)
-	entryModule.Connect(gtk.SigChanged, func() {
-		log.Println("entryModule changed")
+	entryScope := gtk.WrapEntry(builder.GetObject("entryScope").P)
+	entryScope.Connect(gtk.SigChanged, func() {
+		log.Println("entryScope changed")
 		state.handleAction(&actionUpdate{
-			prop:  "module",
-			value: entryModule.GetText(),
+			prop:  "scope",
+			value: entryScope.GetText(),
 		})
 	})
 
@@ -130,6 +137,8 @@ func buildUI() gtk.Window {
 	state.updateFn = func(s string) {
 		bufPreview.SetText(s, int32(len(s)))
 	}
+	state.typ = "fix"
+	state.updatePreview()
 
 	win.Connect(gtk.SigDestroy, gtk.MainQuit)
 	return win
