@@ -37,10 +37,10 @@ func windowWidget() gtk.Widget {
 		pb.SetFraction(sb.GetValue())
 	})
 
-	label = gtk.NewLabel("")
+	label1 := gtk.NewLabel("")
 	s := "Hyperlink to <a href=\"https://www.baidu.com/\">Baidu</a> for your clicking pleasure"
-	label.SetMarkup(s)
-	grid.AttachNextTo(label, sb, gtk.PositionTypeBottom, 2, 1)
+	label1.SetMarkup(s)
+	grid.AttachNextTo(label1, sb, gtk.PositionTypeBottom, 2, 1)
 
 	return grid.Widget
 }
