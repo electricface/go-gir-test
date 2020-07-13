@@ -6,6 +6,9 @@ import (
 	"github.com/linuxdeepin/go-gir/gi"
 	"github.com/linuxdeepin/go-gir/gtk-3.0"
 	"log"
+	"net/url"
+	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -141,7 +144,146 @@ func buildUI() gtk.Window {
 	state.updatePreview()
 
 	win.Connect(gtk.SigDestroy, gtk.MainQuit)
+
+	winAddItem := gtk.WrapWindow(builder.GetObject("winAddItem").P)
+	buildUIWinAddItem(winAddItem, builder)
+	winAddItem.ShowAll()
 	return win
+}
+
+type subState struct {
+	activeRb string
+	url      string
+	issue    string
+
+	onActiveRbChanged func(activeRb string)
+}
+
+func (s *subState) handleActiveRbChanged() {
+	log.Println(s.activeRb)
+	s.onActiveRbChanged(s.activeRb)
+}
+
+func buildUIWinAddItem(win gtk.Window, builder gtk.Builder) {
+	var state subState
+	state.activeRb = "bug"
+
+	rbBug := gtk.WrapRadioButton(builder.GetObject("rbBug").P)
+	rbTask := gtk.WrapRadioButton(builder.GetObject("rbTask").P)
+	rbIssue := gtk.WrapRadioButton(builder.GetObject("rbIssue").P)
+
+	rbBug.Connect(gtk.SigToggled, func() {
+		log.Println("rbBug toggled")
+		if rbBug.GetActive() {
+			state.activeRb = "bug"
+			state.handleActiveRbChanged()
+		}
+	})
+	rbTask.Connect(gtk.SigToggled, func() {
+		log.Println("rbTask toggled")
+		if rbTask.GetActive() {
+			state.activeRb = "task"
+			state.handleActiveRbChanged()
+		}
+	})
+	rbIssue.Connect(gtk.SigToggled, func() {
+		log.Println("rbIssue toggled")
+		if rbIssue.GetActive() {
+			state.activeRb = "issue"
+			state.handleActiveRbChanged()
+		}
+	})
+
+	entryNum := gtk.WrapEntry(builder.GetObject("entryNum").P)
+	entryUrl := gtk.WrapEntry(builder.GetObject("entryUrl").P)
+
+	entryUrl.Connect(gtk.SigChanged, func() {
+		state.url = entryUrl.GetText()
+	})
+
+	updateUrlWithNum := func() {
+		numStr := entryNum.GetText()
+		num, err := strconv.Atoi(numStr)
+		log.Println("num:", num)
+
+		if state.activeRb == "bug" || state.activeRb == "task" {
+			var urlTxt string
+			if err == nil {
+				urlTxt = fmt.Sprintf("https://pms.uniontech.com/zentao/%s-view-%d.html",
+					state.activeRb, num)
+			}
+			entryUrl.SetText(urlTxt)
+		}
+	}
+
+	entryNum.Connect(gtk.SigChanged, func() {
+		updateUrlWithNum()
+	})
+
+	entryIssue := gtk.WrapEntry(builder.GetObject("entryIssue").P)
+	entryIssue.Connect(gtk.SigChanged, func() {
+		state.issue = entryIssue.GetText()
+	})
+
+	boxNum := gtk.WrapBox(builder.GetObject("boxNum").P)
+	boxUrl := gtk.WrapBox(builder.GetObject("boxUrl").P)
+	boxIssue := gtk.WrapBox(builder.GetObject("boxIssue").P)
+
+	btnUrlTest := gtk.WrapButton(builder.GetObject("btnUrlTest").P)
+	btnYes := gtk.WrapButton(builder.GetObject("btnYes").P)
+	btnYes.Connect(gtk.SigClicked, func() {
+		log.Println("btnYes clicked")
+
+		var outStr string
+		if state.activeRb == "bug" || state.activeRb == "task" {
+			outStr = strings.Title(state.activeRb) + ": " + state.url
+		} else {
+			outStr = "Issue: " + state.issue
+		}
+
+		log.Println("outStr: ", outStr)
+		win.Close()
+	})
+	btnNo := gtk.WrapButton(builder.GetObject("btnNo").P)
+	btnNo.Connect(gtk.SigClicked, func() {
+		log.Println("btnNo clicked")
+		win.Close()
+	})
+
+	btnUrlTest.Connect(gtk.SigClicked, func() {
+		urlTxt := entryUrl.GetText()
+		if urlTxt == "" {
+			log.Println("urlTxt is empty")
+			return
+		}
+		_, err := url.Parse(urlTxt)
+		if err != nil {
+			log.Println("WARN:", err)
+			return
+		}
+		go func() {
+			err := exec.Command("xdg-open", urlTxt).Run()
+			if err != nil {
+				log.Println("WARN:", err)
+			}
+		}()
+	})
+
+	state.onActiveRbChanged = func(activeRb string) {
+		switch activeRb {
+		case "bug", "task":
+			boxNum.SetSensitive(true)
+			boxUrl.SetSensitive(true)
+			boxIssue.SetSensitive(false)
+			updateUrlWithNum()
+		case "issue":
+			boxNum.SetSensitive(false)
+			boxUrl.SetSensitive(false)
+			boxIssue.SetSensitive(true)
+		}
+	}
+	state.onActiveRbChanged(state.activeRb)
+
 }
 
 func main() {
