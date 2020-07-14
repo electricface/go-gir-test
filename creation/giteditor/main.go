@@ -135,6 +135,20 @@ func buildUI() gtk.Window {
 		})
 	})
 
+	listStore := gtk.WrapListStore(builder.GetObject("liststore1").P)
+
+	treeIter := gtk.TreeIter{P: gi.Malloc(gtk.SizeOfStructTreeIter)}
+
+	for i := 1; i < 10; i++ {
+		listStore.Append(treeIter)
+		v, _ := g.NewValueWith("name")
+		listStore.SetValue(treeIter, 0, v)
+		v2, _ := g.NewValueWith("value")
+		listStore.SetValue(treeIter, 1, v2)
+	}
+
+	treeIter.Free()
+
 	tvPreview := gtk.WrapTextView(builder.GetObject("tvPreview").P)
 	bufPreview := tvPreview.GetBuffer()
 	state.updateFn = func(s string) {
