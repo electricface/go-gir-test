@@ -2,15 +2,23 @@ package main
 
 import (
 	"fmt"
-	"github.com/linuxdeepin/go-gir/g-2.0"
-	"github.com/linuxdeepin/go-gir/gi"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
 	"log"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"unsafe"
+
+	"github.com/linuxdeepin/go-gir/g-2.0"
+	"github.com/linuxdeepin/go-gir/gi"
+	"github.com/linuxdeepin/go-gir/gtk-3.0"
 )
+
+type line struct {
+	type0   string
+	content string
+}
 
 type State struct {
 	typ   string
@@ -19,7 +27,29 @@ type State struct {
 	desc  string
 	log   string
 
-	updateFn func(string)
+	lines []line
+	//activeLine *line
+	//activeRowIdx int
+	updatePreviewFn func(string)
+	addLineFn       func(l line)
+}
+
+func (s *State) addLine(l line) {
+	s.lines = append(s.lines, l)
+	s.addLineFn(l)
+	s.updatePreview()
+}
+
+func (s *State) clearLines() {
+	s.lines = nil
+	s.updatePreview()
+}
+
+func (s *State) deleteLine(i int) {
+	copy(s.lines[i:], s.lines[i+1:])
+	s.lines[len(s.lines)-1] = line{}
+	s.lines = s.lines[:len(s.lines)-1]
+	s.updatePreview()
 }
 
 func (s *State) handleAction(act interface{}) {
@@ -57,8 +87,15 @@ func (s *State) updatePreview() {
 		sb.WriteString("Log: " + s.log + "\n")
 	}
 
+	if len(s.lines) > 0 {
+		sb.WriteString("\n")
+		for _, l := range s.lines {
+			sb.WriteString(fmt.Sprintf("%s: %s\n", strings.Title(l.type0), l.content))
+		}
+	}
+
 	text := sb.String()
-	s.updateFn(text)
+	s.updatePreviewFn(text)
 }
 
 type actionUpdate struct {
@@ -111,58 +148,114 @@ func buildUI() gtk.Window {
 	bufDesc := tvDesc.GetBuffer()
 	bufDesc.Connect(gtk.SigChanged, func() {
 		log.Println("bufDesc changed")
-		start := gtk.TextIter{P: gi.Malloc(gtk.SizeOfStructTextIter)}
-		end := gtk.TextIter{P: gi.Malloc(gtk.SizeOfStructTextIter)}
+		start := newTextIter()
+		end := newTextIter()
 		bufDesc.GetBounds(start, end)
 		txt := bufDesc.GetText(start, end, false)
 		state.handleAction(&actionUpdate{
 			prop:  "desc",
 			value: txt,
 		})
+		start.Free()
+		end.Free()
 	})
 
 	tvLog := gtk.WrapTextView(builder.GetObject("tvLog").P)
 	bufLog := tvLog.GetBuffer()
 	bufLog.Connect(gtk.SigChanged, func() {
 		log.Println("bufLog changed")
-		start := gtk.TextIter{P: gi.Malloc(gtk.SizeOfStructTextIter)}
-		end := gtk.TextIter{P: gi.Malloc(gtk.SizeOfStructTextIter)}
+		start := newTextIter()
+		end := newTextIter()
 		bufLog.GetBounds(start, end)
 		txt := bufLog.GetText(start, end, false)
 		state.handleAction(&actionUpdate{
 			prop:  "log",
 			value: txt,
 		})
+		start.Free()
+		end.Free()
 	})
+
+	tvLines := gtk.WrapTreeView(builder.GetObject("tvLines").P)
 
 	listStore := gtk.WrapListStore(builder.GetObject("liststore1").P)
 
-	treeIter := gtk.TreeIter{P: gi.Malloc(gtk.SizeOfStructTreeIter)}
-
-	for i := 1; i < 10; i++ {
+	state.addLineFn = func(l line) {
+		treeIter := newTreeIter()
 		listStore.Append(treeIter)
-		v, _ := g.NewValueWith("name")
-		listStore.SetValue(treeIter, 0, v)
-		v2, _ := g.NewValueWith("value")
-		listStore.SetValue(treeIter, 1, v2)
-	}
+		v1, _ := g.NewValueWith(l.type0)
+		listStore.SetValue(treeIter, 0, v1)
 
-	treeIter.Free()
+		v2, _ := g.NewValueWith(l.content)
+		listStore.SetValue(treeIter, 1, v2)
+
+		v2.Free()
+		treeIter.Free()
+	}
 
 	tvPreview := gtk.WrapTextView(builder.GetObject("tvPreview").P)
 	bufPreview := tvPreview.GetBuffer()
-	state.updateFn = func(s string) {
+	state.updatePreviewFn = func(s string) {
 		bufPreview.SetText(s, int32(len(s)))
 	}
 	state.typ = "fix"
 	state.updatePreview()
 
-	win.Connect(gtk.SigDestroy, gtk.MainQuit)
+	win.Connect(gtk.SigDestroy, func() {
+		os.Exit(0)
+	})
 
 	winAddItem := gtk.WrapWindow(builder.GetObject("winAddItem").P)
-	buildUIWinAddItem(winAddItem, builder)
-	winAddItem.ShowAll()
+	buildUIWinAddItem(winAddItem, builder, state)
+
+	btnAddLine := gtk.WrapButton(builder.GetObject("btnAddLine").P)
+	btnDeleteLine := gtk.WrapButton(builder.GetObject("btnDeleteLine").P)
+	btnClearLines := gtk.WrapButton(builder.GetObject("btnClearLines").P)
+
+	btnAddLine.Connect(gtk.SigClicked, func() {
+		winAddItem.SetTransientFor(win)
+		winAddItem.ShowAll()
+	})
+	btnDeleteLine.Connect(gtk.SigClicked, func() {
+		log.Println("btnDeleteLine clicked")
+		sel := tvLines.GetSelection()
+		treePathList, model := sel.GetSelectedRows()
+
+		if treePathList.Length() == 1 {
+			treePath := gtk.TreePath{P: treePathList.NthData(0)}
+			iter := newTreeIter()
+			indices := treePath.GetIndices()
+			id := int(indices.AsSlice()[0])
+			log.Println("delete id", id)
+			state.deleteLine(id)
+
+			model.GetIter(iter, treePath)
+			listStore.Remove(iter)
+			iter.Free()
+			log.Println("after iter.Free")
+		}
+
+		log.Println("before freefull")
+		treePathList.FreeFull(func(item unsafe.Pointer) {
+			gtk.TreePath{P: item}.Free()
+		})
+		log.Println("after freefull")
+
+	})
+	btnClearLines.Connect(gtk.SigClicked, func() {
+		listStore.Clear()
+		state.clearLines()
+	})
+
 	return win
+}
+
+func newTreeIter() gtk.TreeIter {
+	return gtk.TreeIter{P: gi.Malloc(gtk.SizeOfStructTreeIter)}
+}
+
+func newTextIter() gtk.TextIter {
+	return gtk.TextIter{P: gi.Malloc(gtk.SizeOfStructTextIter)}
 }
 
 type subState struct {
@@ -178,7 +271,7 @@ func (s *subState) handleActiveRbChanged() {
 	s.onActiveRbChanged(s.activeRb)
 }
 
-func buildUIWinAddItem(win gtk.Window, builder gtk.Builder) {
+func buildUIWinAddItem(win gtk.Window, builder gtk.Builder, parentState *State) {
 	var state subState
 	state.activeRb = "bug"
 
@@ -248,20 +341,22 @@ func buildUIWinAddItem(win gtk.Window, builder gtk.Builder) {
 	btnYes.Connect(gtk.SigClicked, func() {
 		log.Println("btnYes clicked")
 
-		var outStr string
+		var content string
 		if state.activeRb == "bug" || state.activeRb == "task" {
-			outStr = strings.Title(state.activeRb) + ": " + state.url
+			content = state.url
 		} else {
-			outStr = "Issue: " + state.issue
+			content = state.issue
 		}
-
-		log.Println("outStr: ", outStr)
-		win.Close()
+		parentState.addLine(line{
+			type0:   state.activeRb,
+			content: content,
+		})
+		win.Hide()
 	})
 	btnNo := gtk.WrapButton(builder.GetObject("btnNo").P)
 	btnNo.Connect(gtk.SigClicked, func() {
 		log.Println("btnNo clicked")
-		win.Close()
+		win.Hide()
 	})
 
 	btnUrlTest.Connect(gtk.SigClicked, func() {
@@ -301,8 +396,21 @@ func buildUIWinAddItem(win gtk.Window, builder gtk.Builder) {
 }
 
 func main() {
-	gtk.Init(0, 0)
-	win := buildUI()
-	win.ShowAll()
-	gtk.Main()
+	//gtk.Init(0, 0)
+	//win := buildUI()
+	//win.ShowAll()
+	//gtk.Main()
+	app := gtk.NewApplication("com.deepin.giteditor", g.ApplicationFlagsFlagsNone)
+	app.Connect(gtk.SigActivate, func(args []interface{}) {
+		app := gtk.WrapApplication(args[0].(g.Object).P)
+		win := buildUI()
+		//win.ShowAll()
+		app.AddWindow(win)
+		win.ShowAll()
+	})
+	args := gi.NewCStrArrayWithStrings(os.Args...)
+	defer args.FreeAll()
+	status := app.Run(int32(len(os.Args)), args)
+	app.Unref()
+	os.Exit(int(status))
 }
