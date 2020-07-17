@@ -186,7 +186,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">描述：</property>
+                    <property name="label" translatable="yes">描述：（允许有技术细节）</property>
                   </object>
                 </child>
               </object>
@@ -219,7 +219,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Log: </property>
+                    <property name="label" translatable="yes">Log: （面向大众，通俗易懂） </property>
                   </object>
                 </child>
               </object>

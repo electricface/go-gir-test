@@ -102,10 +102,10 @@ type actionUpdate struct {
 	prop, value string
 }
 
-func buildUI() gtk.Window {
+func buildUI(uiStr string) gtk.Window {
 	state := &State{}
 	builder := gtk.NewBuilder()
-	_, err := builder.AddFromFile("./ui.glade")
+	_, err := builder.AddFromString(uiStr, uint64(len(uiStr)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -156,8 +156,8 @@ func buildUI() gtk.Window {
 			prop:  "desc",
 			value: txt,
 		})
-		start.Free()
-		end.Free()
+		gi.Free(start.P)
+		gi.Free(end.P)
 	})
 
 	tvLog := gtk.WrapTextView(builder.GetObject("tvLog").P)
@@ -172,8 +172,8 @@ func buildUI() gtk.Window {
 			prop:  "log",
 			value: txt,
 		})
-		start.Free()
-		end.Free()
+		gi.Free(start.P)
+		gi.Free(end.P)
 	})
 
 	tvLines := gtk.WrapTreeView(builder.GetObject("tvLines").P)
@@ -190,7 +190,7 @@ func buildUI() gtk.Window {
 		listStore.SetValue(treeIter, 1, v2)
 
 		v2.Free()
-		treeIter.Free()
+		gi.Free(treeIter.P)
 	}
 
 	tvPreview := gtk.WrapTextView(builder.GetObject("tvPreview").P)
@@ -231,15 +231,12 @@ func buildUI() gtk.Window {
 
 			model.GetIter(iter, treePath)
 			listStore.Remove(iter)
-			iter.Free()
-			log.Println("after iter.Free")
+			g.Free(iter.P)
 		}
 
-		log.Println("before freefull")
 		treePathList.FreeFull(func(item unsafe.Pointer) {
 			gtk.TreePath{P: item}.Free()
 		})
-		log.Println("after freefull")
 
 	})
 	btnClearLines.Connect(gtk.SigClicked, func() {
@@ -396,15 +393,16 @@ func buildUIWinAddItem(win gtk.Window, builder gtk.Builder, parentState *State) 
 }
 
 func main() {
-	//gtk.Init(0, 0)
-	//win := buildUI()
-	//win.ShowAll()
-	//gtk.Main()
+	uiGladeData, err := Asset("ui.glade")
+	if err != nil {
+		log.Fatal(err)
+	}
+	uiStr := string(uiGladeData)
+
 	app := gtk.NewApplication("com.deepin.giteditor", g.ApplicationFlagsFlagsNone)
 	app.Connect(gtk.SigActivate, func(args []interface{}) {
 		app := gtk.WrapApplication(args[0].(g.Object).P)
-		win := buildUI()
-		//win.ShowAll()
+		win := buildUI(uiStr)
 		app.AddWindow(win)
 		win.ShowAll()
 	})
