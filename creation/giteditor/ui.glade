@@ -368,7 +368,7 @@
                 <property name="margin_bottom">5</property>
                 <property name="layout_style">start</property>
                 <child>
-                  <object class="GtkButton">
+                  <object class="GtkButton" id="btnSave">
                     <property name="label" translatable="yes">保存</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -148,32 +149,22 @@ func buildUI(uiStr string) gtk.Window {
 	bufDesc := tvDesc.GetBuffer()
 	bufDesc.Connect(gtk.SigChanged, func() {
 		log.Println("bufDesc changed")
-		start := newTextIter()
-		end := newTextIter()
-		bufDesc.GetBounds(start, end)
-		txt := bufDesc.GetText(start, end, false)
+		txt := getTxtBufText(bufDesc)
 		state.handleAction(&actionUpdate{
 			prop:  "desc",
 			value: txt,
 		})
-		gi.Free(start.P)
-		gi.Free(end.P)
 	})
 
 	tvLog := gtk.WrapTextView(builder.GetObject("tvLog").P)
 	bufLog := tvLog.GetBuffer()
 	bufLog.Connect(gtk.SigChanged, func() {
 		log.Println("bufLog changed")
-		start := newTextIter()
-		end := newTextIter()
-		bufLog.GetBounds(start, end)
-		txt := bufLog.GetText(start, end, false)
+		txt := getTxtBufText(bufLog)
 		state.handleAction(&actionUpdate{
 			prop:  "log",
 			value: txt,
 		})
-		gi.Free(start.P)
-		gi.Free(end.P)
 	})
 
 	tvLines := gtk.WrapTreeView(builder.GetObject("tvLines").P)
@@ -244,7 +235,40 @@ func buildUI(uiStr string) gtk.Window {
 		state.clearLines()
 	})
 
+	btnSave := gtk.WrapButton(builder.GetObject("btnSave").P)
+	btnSave.Connect(gtk.SigClicked, func() {
+		log.Println("btnSave clicked")
+		buf := tvPreview.GetBuffer()
+		txt := getTxtBufText(buf)
+		f, err := os.Create(_inputFile)
+		if err != nil {
+			log.Println("WARN:", err)
+			return
+		}
+		defer func() {
+			_ = f.Close()
+			if err == nil {
+				// 保存成功才退出
+				gtk.MainQuit()
+			}
+		}()
+		_, err = io.WriteString(f, txt)
+		if err != nil {
+			log.Println("WARN:", err)
+		}
+	})
+
 	return win
+}
+
+func getTxtBufText(txtBuf gtk.TextBuffer) string {
+	start := newTextIter()
+	end := newTextIter()
+	txtBuf.GetBounds(start, end)
+	txt := txtBuf.GetText(start, end, false)
+	gi.Free(start.P)
+	gi.Free(end.P)
+	return txt
 }
 
 func newTreeIter() gtk.TreeIter {
@@ -392,6 +416,8 @@ func buildUIWinAddItem(win gtk.Window, builder gtk.Builder, parentState *State) 
 
 }
 
+var _inputFile = "/dev/stdout"
+
 func main() {
 	uiGladeData, err := Asset("ui.glade")
 	if err != nil {
@@ -399,16 +425,13 @@ func main() {
 	}
 	uiStr := string(uiGladeData)
 
-	app := gtk.NewApplication("com.deepin.giteditor", g.ApplicationFlagsFlagsNone)
-	app.Connect(gtk.SigActivate, func(args []interface{}) {
-		app := gtk.WrapApplication(args[0].(g.Object).P)
-		win := buildUI(uiStr)
-		app.AddWindow(win)
-		win.ShowAll()
-	})
-	args := gi.NewCStrArrayWithStrings(os.Args...)
-	defer args.FreeAll()
-	status := app.Run(int32(len(os.Args)), args)
-	app.Unref()
-	os.Exit(int(status))
+	if len(os.Args) >= 2 {
+		_inputFile = os.Args[1]
+		log.Println("input file:", _inputFile)
+	}
+
+	gtk.Init(0, 0)
+	win := buildUI(uiStr)
+	win.ShowAll()
+	gtk.Main()
 }
