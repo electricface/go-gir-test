@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -103,7 +104,7 @@ type actionUpdate struct {
 	prop, value string
 }
 
-func buildUI(uiStr string) gtk.Window {
+func buildUI(uiStr string, info *info) gtk.Window {
 	state := &State{}
 	builder := gtk.NewBuilder()
 	_, err := builder.AddFromString(uiStr, uint64(len(uiStr)))
@@ -111,8 +112,56 @@ func buildUI(uiStr string) gtk.Window {
 		log.Fatal(err)
 	}
 	win := gtk.WrapWindow(builder.GetObject("window").P)
-
 	comboType := gtk.WrapComboBox(builder.GetObject("comboType").P)
+	entryScope := gtk.WrapEntry(builder.GetObject("entryScope").P)
+	entryTitle := gtk.WrapEntry(builder.GetObject("entryTitle").P)
+	listStore := gtk.WrapListStore(builder.GetObject("liststore1").P)
+	tvDesc := gtk.WrapTextView(builder.GetObject("tvDesc").P)
+	tvLog := gtk.WrapTextView(builder.GetObject("tvLog").P)
+
+	// init state
+	state.addLineFn = func(l line) {
+		treeIter := newTreeIter()
+		listStore.Append(treeIter)
+		v1, _ := g.NewValueWith(l.type0)
+		listStore.SetValue(treeIter, 0, v1)
+
+		v2, _ := g.NewValueWith(l.content)
+		listStore.SetValue(treeIter, 1, v2)
+
+		v1.Free()
+		v2.Free()
+		gi.Free(treeIter.P)
+	}
+
+	for _, line := range info.lines {
+		if line.type0 == "Log" {
+			state.log = line.content
+		} else {
+			state.addLineFn(line)
+			state.lines = append(state.lines, line)
+		}
+	}
+	state.typ = info.typ
+	if state.typ == "" {
+		state.typ = "fix"
+	}
+	state.scope = info.scope
+	state.title = info.title
+	state.desc = info.desc
+
+	// 填充数据到控件
+	setActiveItem(comboType, state.typ)
+	entryScope.SetText(state.scope)
+	entryTitle.SetText(state.title)
+	setTextViewText(tvDesc, state.desc)
+	setTextViewText(tvLog, state.log)
+
+	// connect event
+	win.Connect(gtk.SigDestroy, func() {
+		os.Exit(0)
+	})
+
 	comboType.Connect(gtk.SigChanged, func() {
 		log.Println("comboType changed")
 		model := comboType.GetModel()
@@ -125,9 +174,9 @@ func buildUI(uiStr string) gtk.Window {
 			prop:  "type",
 			value: txt,
 		})
+		v.Free()
 	})
 
-	entryScope := gtk.WrapEntry(builder.GetObject("entryScope").P)
 	entryScope.Connect(gtk.SigChanged, func() {
 		log.Println("entryScope changed")
 		state.handleAction(&actionUpdate{
@@ -136,7 +185,6 @@ func buildUI(uiStr string) gtk.Window {
 		})
 	})
 
-	entryTitle := gtk.WrapEntry(builder.GetObject("entryTitle").P)
 	entryTitle.Connect(gtk.SigChanged, func() {
 		log.Println("entryTitle changed")
 		state.handleAction(&actionUpdate{
@@ -145,7 +193,6 @@ func buildUI(uiStr string) gtk.Window {
 		})
 	})
 
-	tvDesc := gtk.WrapTextView(builder.GetObject("tvDesc").P)
 	bufDesc := tvDesc.GetBuffer()
 	bufDesc.Connect(gtk.SigChanged, func() {
 		log.Println("bufDesc changed")
@@ -156,7 +203,6 @@ func buildUI(uiStr string) gtk.Window {
 		})
 	})
 
-	tvLog := gtk.WrapTextView(builder.GetObject("tvLog").P)
 	bufLog := tvLog.GetBuffer()
 	bufLog.Connect(gtk.SigChanged, func() {
 		log.Println("bufLog changed")
@@ -168,33 +214,12 @@ func buildUI(uiStr string) gtk.Window {
 	})
 
 	tvLines := gtk.WrapTreeView(builder.GetObject("tvLines").P)
-
-	listStore := gtk.WrapListStore(builder.GetObject("liststore1").P)
-
-	state.addLineFn = func(l line) {
-		treeIter := newTreeIter()
-		listStore.Append(treeIter)
-		v1, _ := g.NewValueWith(l.type0)
-		listStore.SetValue(treeIter, 0, v1)
-
-		v2, _ := g.NewValueWith(l.content)
-		listStore.SetValue(treeIter, 1, v2)
-
-		v2.Free()
-		gi.Free(treeIter.P)
-	}
-
 	tvPreview := gtk.WrapTextView(builder.GetObject("tvPreview").P)
 	bufPreview := tvPreview.GetBuffer()
 	state.updatePreviewFn = func(s string) {
 		bufPreview.SetText(s, int32(len(s)))
 	}
-	state.typ = "fix"
 	state.updatePreview()
-
-	win.Connect(gtk.SigDestroy, func() {
-		os.Exit(0)
-	})
 
 	winAddItem := gtk.WrapWindow(builder.GetObject("winAddItem").P)
 	buildUIWinAddItem(winAddItem, builder, state)
@@ -269,6 +294,37 @@ func getTxtBufText(txtBuf gtk.TextBuffer) string {
 	gi.Free(start.P)
 	gi.Free(end.P)
 	return txt
+}
+
+func setTextViewText(tv gtk.TextView, txt string) {
+	buf := tv.GetBuffer()
+	buf.SetText(txt, int32(len(txt)))
+}
+
+func setActiveItem(comboType gtk.ComboBox, item string) {
+	model := comboType.GetModel()
+	treeIter := newTreeIter()
+	defer gi.Free(treeIter.P)
+	ok := model.GetIterFirst(treeIter)
+	if !ok {
+		return
+	}
+
+	for {
+		v := g.NewValue()
+		model.GetValue(treeIter, 0, v)
+		txt := v.GetString()
+		v.Free()
+		if txt == item {
+			comboType.SetActiveIter(treeIter)
+			break
+		}
+
+		ok := model.IterNext(treeIter)
+		if !ok {
+			break
+		}
+	}
 }
 
 func newTreeIter() gtk.TreeIter {
@@ -430,8 +486,14 @@ func main() {
 		log.Println("input file:", _inputFile)
 	}
 
+	content, err := ioutil.ReadFile(_inputFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	info, _ := parse(string(content))
+
 	gtk.Init(0, 0)
-	win := buildUI(uiStr)
+	win := buildUI(uiStr, info)
 	win.ShowAll()
 	gtk.Main()
 }
