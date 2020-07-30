@@ -21,8 +21,8 @@ Bug: url2
 	assert.Equal(t, &info{
 		typ:   "fix",
 		scope: "scope",
-		title: "title\ntitle next line\n",
-		desc:  "description desc1\ndesc2\ndesc3\n",
+		title: "title\ntitle next line",
+		desc:  "description desc1\ndesc2\ndesc3",
 		lines: []line{
 			{
 				type0:   "Log",
@@ -31,6 +31,111 @@ Bug: url2
 			{
 				type0:   "Bug",
 				content: "url1",
+			},
+			{
+				type0:   "Bug",
+				content: "url2",
+			},
+		},
+	}, info0)
+
+	info0, _ = parse(`fix(scope): title
+title next line
+
+Log: log1
+Bug: url1
+Bug: url2
+`)
+	assert.Equal(t, &info{
+		typ:   "fix",
+		scope: "scope",
+		title: "title\ntitle next line",
+		lines: []line{
+			{
+				type0:   "Log",
+				content: "log1",
+			},
+			{
+				type0:   "Bug",
+				content: "url1",
+			},
+			{
+				type0:   "Bug",
+				content: "url2",
+			},
+		},
+	}, info0)
+
+	info0, _ = parse(`fix(scope): title
+title next line
+
+
+Log: log1
+
+Bug: url1
+
+Bug: url2
+`)
+	assert.Equal(t, &info{
+		typ:   "fix",
+		scope: "scope",
+		title: "title\ntitle next line",
+		lines: []line{
+			{
+				type0:   "Log",
+				content: "log1",
+			},
+			{
+				type0:   "Bug",
+				content: "url1",
+			},
+			{
+				type0:   "Bug",
+				content: "url2",
+			},
+		},
+	}, info0)
+
+	info0, _ = parse(`fix(scope): title
+title next line
+
+Log: log1
+Bugurl1
+Bug: url2
+`)
+	assert.Equal(t, &info{
+		typ:   "fix",
+		scope: "scope",
+		title: "title\ntitle next line",
+		lines: []line{
+			{
+				type0:   "Log",
+				content: "log1",
+			},
+			{
+				type0:   "Bug",
+				content: "url2",
+			},
+		},
+	}, info0)
+
+	info0, _ = parse(`fix(scope): title
+title next line
+
+Log: log1
+#Bug: url2
+#Bug: url2
+#Bug: url2
+Bug: url2
+`)
+	assert.Equal(t, &info{
+		typ:   "fix",
+		scope: "scope",
+		title: "title\ntitle next line",
+		lines: []line{
+			{
+				type0:   "Log",
+				content: "log1",
 			},
 			{
 				type0:   "Bug",

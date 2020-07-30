@@ -80,17 +80,17 @@ func (s *State) updatePreview() {
 	if s.scope != "" {
 		module = "(" + s.scope + ")"
 	}
-	sb.WriteString(fmt.Sprintf("%s%s: %s\n", s.typ, module, s.title))
-	sb.WriteString("\n")
-	sb.WriteString(s.desc + "\n")
-	sb.WriteString("\n")
+	sb.WriteString(fmt.Sprintf("%s%s: %s\n\n", s.typ, module, s.title))
+
+	if s.desc != "" {
+		sb.WriteString(s.desc + "\n\n")
+	}
 
 	if s.log != "" {
 		sb.WriteString("Log: " + s.log + "\n")
 	}
 
 	if len(s.lines) > 0 {
-		sb.WriteString("\n")
 		for _, l := range s.lines {
 			sb.WriteString(fmt.Sprintf("%s: %s\n", strings.Title(l.type0), l.content))
 		}
@@ -207,6 +207,7 @@ func buildUI(uiStr string, info *info) gtk.Window {
 	bufLog.Connect(gtk.SigChanged, func() {
 		log.Println("bufLog changed")
 		txt := getTxtBufText(bufLog)
+		txt = strings.ReplaceAll(txt, "\n", "")
 		state.handleAction(&actionUpdate{
 			prop:  "log",
 			value: txt,

@@ -26,15 +26,18 @@ var lineBreak = "\n"
 func parse(str string) (*info, error) {
 	var info info
 	var step int
-	var title string
+	//var title string
 	lines := strings.Split(str, lineBreak)
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
 
 		if line == "" {
-			if step == stepTitle {
+			if step == stepTitle && info.title != "" {
 				step++ // to desc
-			} else if step == stepDesc {
+			} else if step == stepDesc && info.desc != "" {
 				step++ // to keyValuePairs
 			}
 
@@ -44,20 +47,29 @@ func parse(str string) (*info, error) {
 				typ, scope, line := parseTitle(line)
 				info.typ = typ
 				info.scope = scope
-				title = line + lineBreak
-			} else if step == stepTitle {
-				title += line + lineBreak
-			} else if step == stepDesc {
-				info.desc += line + lineBreak
-			} else if step == stepKeyValuePairs {
+				info.title = line
+			} else {
 				kv, ok := parseKV(line)
 				if ok {
 					info.lines = append(info.lines, kv)
+					step = stepKeyValuePairs
+				} else {
+					switch step {
+					case stepTitle:
+						if info.title != "" {
+							info.title += lineBreak
+						}
+						info.title += line
+					case stepDesc:
+						if info.desc != "" {
+							info.desc += lineBreak
+						}
+						info.desc += line
+					}
 				}
 			}
 		}
 	}
-	info.title = title
 	return &info, nil
 }
 
