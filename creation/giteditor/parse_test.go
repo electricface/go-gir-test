@@ -143,6 +143,31 @@ Bug: url2
 			},
 		},
 	}, info0)
+
+	info0, _ = parse(`fix(scope): title
+title next line
+
+desc1
+
+desc2
+
+desc 3
+
+Log: log1
+`)
+	assert.Equal(t, &info{
+		typ:   "fix",
+		scope: "scope",
+		title: "title\ntitle next line",
+		desc:  "desc1\n\ndesc2\n\ndesc 3",
+		lines: []line{
+			{
+				type0:   "Log",
+				content: "log1",
+			},
+		},
+	}, info0)
+
 }
 
 func TestParseTitle(t *testing.T) {

@@ -37,8 +37,11 @@ func parse(str string) (*info, error) {
 		if line == "" {
 			if step == stepTitle && info.title != "" {
 				step++ // to desc
-			} else if step == stepDesc && info.desc != "" {
-				step++ // to keyValuePairs
+			} else if step == stepDesc {
+				// desc 中允许有空行
+				if info.desc != "" {
+					info.desc += lineBreak
+				}
 			}
 
 		} else {
@@ -70,6 +73,7 @@ func parse(str string) (*info, error) {
 			}
 		}
 	}
+	info.desc = strings.TrimSpace(info.desc)
 	return &info, nil
 }
 

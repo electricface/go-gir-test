@@ -114,8 +114,8 @@ func buildUI(uiStr string, info *info) gtk.Window {
 	win := gtk.WrapWindow(builder.GetObject("window").P)
 	comboType := gtk.WrapComboBox(builder.GetObject("comboType").P)
 	entryScope := gtk.WrapEntry(builder.GetObject("entryScope").P)
-	entryTitle := gtk.WrapEntry(builder.GetObject("entryTitle").P)
 	listStore := gtk.WrapListStore(builder.GetObject("liststore1").P)
+	tvTitle := gtk.WrapTextView(builder.GetObject("tvTitle").P)
 	tvDesc := gtk.WrapTextView(builder.GetObject("tvDesc").P)
 	tvLog := gtk.WrapTextView(builder.GetObject("tvLog").P)
 
@@ -153,7 +153,7 @@ func buildUI(uiStr string, info *info) gtk.Window {
 	// 填充数据到控件
 	setActiveItem(comboType, state.typ)
 	entryScope.SetText(state.scope)
-	entryTitle.SetText(state.title)
+	setTextViewText(tvTitle, state.title)
 	setTextViewText(tvDesc, state.desc)
 	setTextViewText(tvLog, state.log)
 
@@ -185,11 +185,13 @@ func buildUI(uiStr string, info *info) gtk.Window {
 		})
 	})
 
-	entryTitle.Connect(gtk.SigChanged, func() {
-		log.Println("entryTitle changed")
+	bufTitle := tvTitle.GetBuffer()
+	bufTitle.Connect(gtk.SigChanged, func() {
+		log.Println("bufTitle changed")
+		txt := getTxtBufText(bufTitle)
 		state.handleAction(&actionUpdate{
 			prop:  "title",
-			value: entryTitle.GetText(),
+			value: txt,
 		})
 	})
 
