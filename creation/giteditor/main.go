@@ -122,6 +122,7 @@ func buildUI(uiStr string, info *info) gtk.Window {
 	// init state
 	state.addLineFn = func(l line) {
 		treeIter := newTreeIter()
+		defer gi.Free(treeIter.P)
 		listStore.Append(treeIter)
 		v1, _ := g.NewValueWith(l.type0)
 		listStore.SetValue(treeIter, 0, v1)
@@ -131,7 +132,6 @@ func buildUI(uiStr string, info *info) gtk.Window {
 
 		v1.Free()
 		v2.Free()
-		gi.Free(treeIter.P)
 	}
 
 	for _, line := range info.lines {
@@ -165,16 +165,17 @@ func buildUI(uiStr string, info *info) gtk.Window {
 	comboType.Connect(gtk.SigChanged, func() {
 		log.Println("comboType changed")
 		model := comboType.GetModel()
-		treeIter := gtk.TreeIter{P: gi.Malloc(gtk.SizeOfStructTreeIter)}
+		treeIter := newTreeIter()
+		defer gi.Free(treeIter.P)
 		comboType.GetActiveIter(treeIter)
 		v := g.NewValue()
+		defer v.Free()
 		model.GetValue(treeIter, 0, v)
 		txt := v.GetString()
 		state.handleAction(&actionUpdate{
 			prop:  "type",
 			value: txt,
 		})
-		v.Free()
 	})
 
 	entryScope.Connect(gtk.SigChanged, func() {
@@ -243,6 +244,7 @@ func buildUI(uiStr string, info *info) gtk.Window {
 		if treePathList.Length() == 1 {
 			treePath := gtk.TreePath{P: treePathList.NthData(0)}
 			iter := newTreeIter()
+			defer g.Free(iter.P)
 			indices := treePath.GetIndices()
 			id := int(indices.AsSlice()[0])
 			log.Println("delete id", id)
@@ -250,7 +252,6 @@ func buildUI(uiStr string, info *info) gtk.Window {
 
 			model.GetIter(iter, treePath)
 			listStore.Remove(iter)
-			g.Free(iter.P)
 		}
 
 		treePathList.FreeFull(func(item unsafe.Pointer) {
