@@ -64,7 +64,7 @@ func Test1(t *testing.T) {
 	log.Println("parse name:", parseName)
 
 	f8 := f7.Dup()
-	path0  = f8.GetPath()
+	path0 = f8.GetPath()
 	log.Println(path0)
 
 	hash := f8.Hash()
@@ -136,7 +136,7 @@ func TestReadAll(t *testing.T) {
 			break
 		}
 		data := arr.AsSlice()
-		fmt.Printf("data: %s\n", data)
+		fmt.Printf("data: %s\n", data[:bytesRead])
 	}
 }
 
@@ -147,5 +147,35 @@ func TestReadAllAsync(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	iStream.ReadAllAsync()
+	mainCtx := g.MainContextDefault()
+	mainLoop := g.NewMainLoop(mainCtx, false)
+	go mainLoop.Run()
+
+	arr := gi.MakeUint8Array(100)
+	defer arr.Free()
+
+	ch := make(chan bool)
+	for {
+		iStream.ReadAllAsync(arr, uint64(arr.Len), 0, nil, func(v interface{}) {
+			s := v.(*g.AsyncReadyCallbackStruct)
+			log.Println("done")
+			res := s.F_res
+			result, bytesRead, err := iStream.ReadAllFinish(res)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println(result, bytesRead)
+			data := arr.AsSlice()[:bytesRead]
+			log.Printf("data: %s\n", data)
+			if bytesRead > 0 {
+				ch <- false
+			} else {
+				ch <- true
+			}
+		})
+		isEnd := <-ch
+		if isEnd {
+			break
+		}
+	}
 }
