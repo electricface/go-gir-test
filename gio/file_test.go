@@ -1,14 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"testing"
 
 	"github.com/linuxdeepin/go-gir/g-2.0"
 	"github.com/linuxdeepin/go-gir/gi"
 )
 
-func main() {
+func Test1(t *testing.T) {
 	f1 := g.FileNewForPath("/tmp")
 	uri := f1.GetUri()
 	log.Println("uri:", uri)
@@ -28,13 +30,13 @@ func main() {
 	}
 	log.Println(pwd)
 
-	f4 := g.FileNewForCommandlineArg("./file_t1.go")
+	f4 := g.FileNewForCommandlineArg("./file_test.go")
 	uri = f4.GetUri()
 	log.Println("uri:", uri)
 	uriScheme := f4.GetUriScheme()
 	log.Println("uri scheme:", uriScheme)
 
-	f5 := g.FileNewForCommandlineArgAndCwd("./file_t1.go", "/tmp")
+	f5 := g.FileNewForCommandlineArgAndCwd("./file_test.go", "/tmp")
 	path0 := f5.GetPath()
 	log.Println("path0:", path0)
 
@@ -46,9 +48,8 @@ func main() {
 	path0 = f6.GetPath()
 	log.Println("path0:", path0)
 	ops := out.GetOutputStream()
-	arr := []byte("hello world")
-	byteArr := gi.NewUint8Array(arr...)
-	result, err := ops.Write(byteArr, uint64(len(arr)), nil)
+	byteArr := gi.NewUint8Array([]byte("hello world"))
+	result, err := ops.Write(byteArr, uint64(byteArr.Len), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,4 +90,62 @@ func main() {
 	parent = f9.GetParent()
 	path0 = parent.GetPath()
 	log.Println("path:", path0)
+}
+
+func TestReadBytes(t *testing.T) {
+	passwdF := g.FileNewForPath("/etc/passwd")
+	iStream, err := passwdF.Read(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for {
+		gb, err := iStream.ReadBytes(100, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		size := gb.GetSize()
+		if size == 0 {
+			break
+		}
+
+		log.Println("size:", size)
+		arr := gb.GetData()
+		data := arr.AsSlice()
+		fmt.Printf("data: %s\n", data)
+	}
+}
+
+func TestReadAll(t *testing.T) {
+	passwdF := g.FileNewForPath("/etc/passwd")
+	iStream, err := passwdF.Read(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	arr := gi.MakeUint8Array(100)
+	defer arr.Free()
+
+	for {
+		result, bytesRead, err := iStream.ReadAll(arr, uint64(arr.Len), nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// result 是否成功
+		log.Printf("success: %v, bytes read: %v\n", result, bytesRead)
+		if bytesRead == 0 {
+			break
+		}
+		data := arr.AsSlice()
+		fmt.Printf("data: %s\n", data)
+	}
+}
+
+func TestReadAllAsync(t *testing.T) {
+	passwdF := g.FileNewForPath("/etc/passwd")
+	iStream, err := passwdF.Read(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	iStream.ReadAllAsync()
 }
