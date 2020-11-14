@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/linuxdeepin/go-gir/g-2.0"
@@ -140,7 +141,7 @@ func TestReadAll(t *testing.T) {
 	}
 }
 
-func TestReadAllAsync(t *testing.T) {
+func TestReadAllAsyncCh(t *testing.T) {
 	passwdF := g.FileNewForPath("/etc/passwd")
 	iStream, err := passwdF.Read(nil)
 	if err != nil {
@@ -178,4 +179,49 @@ func TestReadAllAsync(t *testing.T) {
 			break
 		}
 	}
+	mainLoop.Quit()
+}
+
+func TestReadAllAsyncWg(t *testing.T) {
+	passwdF := g.FileNewForPath("/etc/passwd")
+	iStream, err := passwdF.Read(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mainCtx := g.MainContextDefault()
+	mainLoop := g.NewMainLoop(mainCtx, false)
+	go mainLoop.Run()
+
+	arr := gi.MakeUint8Array(100)
+	defer arr.Free()
+
+	var wg sync.WaitGroup
+	for {
+		wg.Add(1)
+		isEnd := false
+		iStream.ReadAllAsync(arr, uint64(arr.Len), 0, nil, func(v interface{}) {
+			s := v.(*g.AsyncReadyCallbackStruct)
+			log.Println("done")
+			res := s.F_res
+			result, bytesRead, err := iStream.ReadAllFinish(res)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println(result, bytesRead)
+			data := arr.AsSlice()[:bytesRead]
+			log.Printf("data: %s\n", data)
+			if bytesRead > 0 {
+				isEnd = false
+			} else {
+				isEnd = true
+			}
+			wg.Done()
+		})
+		wg.Wait()
+		if isEnd {
+			break
+		}
+	}
+	mainLoop.Quit()
 }
