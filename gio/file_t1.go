@@ -56,4 +56,37 @@ func main() {
 
 	out.Unref()
 
+	f7 := g.FileParseName("file:///home/del1/abc")
+	path0 = f7.GetPath()
+	log.Println("path0:", path0)
+	parseName := f7.GetParseName()
+	log.Println("parse name:", parseName)
+
+	f8 := f7.Dup()
+	path0  = f8.GetPath()
+	log.Println(path0)
+
+	hash := f8.Hash()
+	log.Println("hash:", hash)
+
+	log.Println("f7 = f8 ? ", f7.Equal(f8))
+	log.Println("f7 = f6 ? ", f7.Equal(f6))
+
+	basename := f8.GetBasename()
+	log.Println("basename:", basename)
+
+	path0 = f8.PeekPath()
+	log.Println("path:", path0)
+
+	uri = f8.GetUri()
+	log.Println("uri:", uri)
+
+	parent := f8.GetParent()
+	path0 = parent.GetPath()
+	log.Println("path:", path0)
+
+	f9 := g.FileNewForPath("/")
+	parent = f9.GetParent()
+	path0 = parent.GetPath()
+	log.Println("path:", path0)
 }
