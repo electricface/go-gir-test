@@ -20,7 +20,7 @@ func main() {
 
 	swin := gtk.NewScrolledWindow(nil, nil)
 
-	typeArr := gi.NewGTypeArray(gdkpixbuf.PixbufGetType(), g.TYPE_STRING)
+	typeArr := gi.NewGTypeArray([]gi.GType{gdkpixbuf.PixbufGetType(), g.TYPE_STRING})
 	store := gtk.NewTreeStore(2, typeArr)
 	defer typeArr.Free()
 

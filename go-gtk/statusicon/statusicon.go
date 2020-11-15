@@ -21,8 +21,6 @@ import (
 	"log"
 	"unsafe"
 
-	gi "github.com/linuxdeepin/go-gir/gi"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/linuxdeepin/go-gir/g-2.0"
 	"github.com/linuxdeepin/go-gir/gtk-3.0"
@@ -169,19 +167,12 @@ func main() {
 	si := gtk.NewStatusIconFromStock(gtk.STOCK_FILE)
 	si.SetTitle("StatusIcon Example")
 	si.SetTooltipMarkup("StatusIcon Example")
-	//si.Connect("popup-menu", func(cbx *glib.CallbackContext) {
-	//	nm.Popup(nil, nil, gtk.StatusIconPositionMenu, si, uint(cbx.Args(0)), uint32(cbx.Args(1)))
-	//})
 	si.Connect(gtk.SigPopupMenu, func(args []interface{}) {
 		button := args[1].(uint32)
 		activateTime := args[2].(uint32)
 		// TODO 这里 func 传了 0，就是空指针，也是可以用的。
 
-		//callMap[1] = myCall2
-		menu.Popup(nil, nil, int(0), gi.RegisterFunc(myCall3), uint32(button), uint32(activateTime))
-		// args:  gtk.GetXXXX, gi.NewCall(func(args interface{}) {})
-		// args: func(args interface{})
-		// args: interface{}
+		menu.Popup(nil, nil, myCall3, button, activateTime)
 		log.Println(button, activateTime)
 	})
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/linuxdeepin/go-gir/g-2.0"
 	"github.com/linuxdeepin/go-gir/gdkpixbuf-2.0"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
 	gi "github.com/linuxdeepin/go-gir/gi"
+	"github.com/linuxdeepin/go-gir/gtk-3.0"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 
 	swin := gtk.NewScrolledWindow(nil, nil)
 
-	typeArr := gi.NewGTypeArray(gdkpixbuf.PixbufGetType(), g.TYPE_STRING)
+	typeArr := gi.NewGTypeArray([]gi.GType{gdkpixbuf.PixbufGetType(), g.TYPE_STRING})
 	store := gtk.NewListStore(2, typeArr)
 	typeArr.Free()
 	iconview := gtk.NewIconViewWithModel(store)

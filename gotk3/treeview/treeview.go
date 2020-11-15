@@ -86,7 +86,7 @@ func setupTreeView() (gtk.TreeView, gtk.ListStore) {
 	col2 := createColumn("feature", ColumnFeature)
 	treeView.AppendColumn(col1)
 	treeView.AppendColumn(col2)
-	arr := gi.NewGTypeArray(g.TYPE_STRING, g.TYPE_STRING)
+	arr := gi.NewGTypeArray([]gi.GType{g.TYPE_STRING, g.TYPE_STRING})
 	listStore := gtk.NewListStore(2, arr)
 	treeView.SetModel(listStore)
 	return treeView, listStore
