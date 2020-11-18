@@ -168,7 +168,11 @@ func buildUI(uiStr string, info *info) gtk.Window {
 		treeIter := newTreeIter()
 		defer gi.Free(treeIter.P)
 		comboType.GetActiveIter(treeIter)
-		v := g.NewValue()
+		v, err := g.NewValue()
+		if err != nil {
+			log.Println("WARN:", err)
+			return
+		}
 		defer v.Free()
 		model.GetValue(treeIter, 0, v)
 		txt := v.GetString()
@@ -314,11 +318,17 @@ func setActiveItem(comboType gtk.ComboBox, item string) {
 		return
 	}
 
+	v, err := g.NewValue()
+	if err != nil {
+		log.Println("WARN:", err)
+		return
+	}
+	defer v.Free()
+
 	for {
-		v := g.NewValue()
+		v.Unset()
 		model.GetValue(treeIter, 0, v)
 		txt := v.GetString()
-		v.Free()
 		if txt == item {
 			comboType.SetActiveIter(treeIter)
 			break
