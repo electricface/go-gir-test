@@ -62,7 +62,7 @@ func main() {
 
 	frame := gtk.NewVBox(false, 1)
 	align := gtk.NewAlignment(0, 0, 0, 0)
-	image := gtk.NewImageFromFile("/home/tp1/go/src/github.com/electricface/go-gir3/test/go-gtk/toolpalette/turkey.jpg")
+	image := gtk.NewImageFromFile("./turkey.jpg")
 	align.Add(image)
 	frame.Add(align)
 
