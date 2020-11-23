@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"path/filepath"
+
+	"github.com/linuxdeepin/go-gir/gdkpixbuf-2.0"
 
 	"github.com/linuxdeepin/go-gir/g-2.0"
-
-	"github.com/electricface/go-gir3/gi-lite"
+	"github.com/linuxdeepin/go-gir/gi"
 	"github.com/linuxdeepin/go-gir/gtk-3.0"
 )
 
@@ -18,6 +21,7 @@ type actionEntry struct {
 	isActive    bool // toggle action
 	value       int  // radio action
 	onActivate  func(action gtk.Action)
+	//onChange    func(action gtk.RadioAction, current int32)
 }
 
 func activateAction(action gtk.Action) {
@@ -46,13 +50,100 @@ func activateAction(action gtk.Action) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Println("on response", responseId)
 		dialog0.Destroy()
 	})
 	dialog.Show()
 }
 
+func onRadioActionChanged(action, current gtk.RadioAction) {
+	if _messageLabel.P == nil {
+		return
+	}
+	if action == current {
+		name := current.GetName()
+		value := current.GetCurrentValue()
+		text := fmt.Sprintf("You activated radio action %s of type %s.\n"+
+			" Current value: %d", name, "TYPE", value)
+		_messageLabel.SetText(text)
+		_infoBar.SetMessageType(gtk.MessageTypeEnum(value))
+		_infoBar.Show()
+		log.Println("set text", text)
+	}
+}
+
+func updateStatusBar(buffer gtk.TextBuffer, statusBar gtk.Statusbar) {
+	statusBar.Pop(0)
+	count := buffer.GetCharCount()
+
+	iter := gtk.TextIter{P: gi.Malloc0(gtk.SizeOfStructTextIter)}
+	buffer.GetIterAtMark(iter, buffer.GetInsert())
+	row := iter.GetLine()
+	col := iter.GetLineOffset()
+	msg := fmt.Sprintf("Cursor at row %d column %d - %d chars in document",
+		row, col, count)
+	statusBar.Push(0, msg)
+	gi.Free(iter.P)
+	iter.P = nil
+}
+
 func aboutCb(action gtk.Action) {
 	log.Println("about cb")
+
+	authors := []string{"John (J5) Palmieri",
+		"Tomeu Vizoso",
+		"and many more..."}
+	documenters := []string{"David Malcolm",
+		"Zack Goldberg",
+		"and many more..."}
+	license := `
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with the Gnome Library; see the file COPYING.LIB.  If not,
+write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+`
+	filename := filepath.Join("data", "gtk-logo-rgb.gif")
+	pixBuf, err := gdkpixbuf.NewPixbufFromFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	transparent := pixBuf.AddAlpha(true, 0xff, 0xff, 0xff)
+
+	about := gtk.NewAboutDialog()
+	about.SetParent(_window)
+	about.SetProgramName("Gtk+ Code Demos")
+	about.SetVersion("0.1")
+	about.SetCopyright("(C) 2010 The PyGI Team")
+	about.SetLicense(license)
+	about.SetWebsite("http://live.gnome.org/PyGI")
+	about.SetComments("Program to demonstrate PyGI functions.")
+
+	// authors
+	authorsArr := gi.NewCStrArrayZTWithStrings(authors...)
+	defer authorsArr.FreeAll()
+	about.SetAuthors(authorsArr)
+
+	// documenters
+	documentersArr := gi.NewCStrArrayZTWithStrings(documenters...)
+	defer documentersArr.FreeAll()
+
+	about.SetDocumenters(documentersArr)
+
+	about.SetLogo(transparent)
+	about.SetTitle("About GTK+ Code Demos")
+	about.Connect(gtk.SigResponse, about.Destroy)
+	about.Show()
 }
 
 var actionEntries = []actionEntry{
@@ -159,27 +250,30 @@ var shapeActionEntries = []actionEntry{
 }
 
 func addRadioActions(group gtk.ActionGroup, entries []actionEntry,
-	value int, onChange func()) {
+	value int, onChange func(action, current gtk.RadioAction)) {
 
+	var lastAction gtk.RadioAction
 	for _, entry := range entries {
 		action := gtk.NewRadioAction(entry.name, entry.label, entry.tooltip,
 			entry.stockId, int32(entry.value))
-		entryCopy := entry
-		if entryCopy.onActivate != nil {
-			action.Connect(gtk.SigActivate, func(args []interface{}) {
-				var action0 gtk.Action
-				err := gi.Store(args, &action0)
+		if onChange != nil {
+			action.Connect(gtk.SigChanged, func(args []interface{}) {
+				var action0 gtk.RadioAction
+				var current gtk.RadioAction
+				err := gi.Store(args, &action0, &current)
 				if err != nil {
 					log.Fatal(err)
 				}
-				entryCopy.onActivate(action0)
+
+				onChange(action0, current)
 			})
 		}
 		if value == entry.value {
 			action.SetActive(true)
-			//} else {
-			//	action.SetActive(false)
 		}
+		action.JoinGroup(lastAction)
+		lastAction = action
+
 		if entry.accelerator == "" {
 			group.AddAction(action)
 		} else {
@@ -190,6 +284,18 @@ func addRadioActions(group gtk.ActionGroup, entries []actionEntry,
 
 func registerStockIcons() {
 	// TODO
+	factory := gtk.NewIconFactory()
+	factory.AddDefault()
+
+	filename := filepath.Join("data", "gtk-logo-rgb.gif")
+	pixBuf, err := gdkpixbuf.NewPixbufFromFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	transparent := pixBuf.AddAlpha(true, 0xff, 0xff, 0xff)
+	iconSet := gtk.NewIconSetFromPixbuf(transparent)
+
+	factory.Add("demo-gtk-logo", iconSet)
 }
 
 func _quit() {
@@ -238,6 +344,8 @@ const uiInfo = `<ui>
 `
 
 var _window gtk.Window
+var _infoBar gtk.InfoBar
+var _messageLabel gtk.Label
 
 func main() {
 	registerStockIcons()
@@ -255,23 +363,19 @@ func main() {
 		gtk.STOCK_OPEN)
 	actionGroup.AddAction(openAction)
 
-	// add actions action_entries
 	addActions(actionGroup, actionEntries)
-
-	// add toggle actions
 	addToggleActions(actionGroup, toggleActionEntries)
-
-	// add radio actions
-	addRadioActions(actionGroup, colorActionEntries, colorRed, nil)
-
-	// add radio actions
-	addRadioActions(actionGroup, shapeActionEntries, shapeSquare, nil)
+	addRadioActions(actionGroup, colorActionEntries, colorRed, onRadioActionChanged)
+	addRadioActions(actionGroup, shapeActionEntries, shapeSquare, onRadioActionChanged)
 
 	merge := gtk.NewUIManager()
 	merge.InsertActionGroup(actionGroup, 0)
 	window.AddAccelGroup(merge.GetAccelGroup())
 
-	merge.AddUiFromString(uiInfo, int64(len(uiInfo)))
+	_, err := merge.AddUiFromString(uiInfo, int64(len(uiInfo)))
+	if err != nil {
+		log.Fatal(err)
+	}
 	bar := merge.GetWidget("/MenuBar")
 	bar.Show()
 	table.Attach(bar, 0, 1, 0, 1,
@@ -284,11 +388,14 @@ func main() {
 		0, 0, 0)
 
 	infoBar := gtk.NewInfoBar()
+	_infoBar = infoBar
 	infoBar.SetNoShowAll(true)
 	messageLabel := gtk.NewLabel("")
+	_messageLabel = messageLabel
 	messageLabel.Show()
 
-	//infoBar.GetContentArea().
+	gtk.WrapContainer(infoBar.GetContentArea().P).Add(messageLabel)
+	infoBar.GetContentArea()
 	infoBar.AddButton(gtk.STOCK_OK, int32(gtk.ResponseTypeOk))
 	infoBar.Connect(gtk.SigResponse, func(args []interface{}) {
 		var infoBar0 gtk.InfoBar
@@ -323,18 +430,14 @@ func main() {
 	// show text widget info in the statusbar
 	buffer := contents.GetBuffer()
 	buffer.Connect(gtk.SigChanged, func() {
-		// update status bar
+		updateStatusBar(buffer, statusBar)
 	})
 	buffer.Connect(gtk.SigMarkSet, func() {
-		// mark_set_callback
+		updateStatusBar(buffer, statusBar)
 	})
 
 	updateStatusBar(buffer, statusBar)
-	window.SetDefaultSize(200, 200)
+	window.SetDefaultSize(500, 200)
 	window.ShowAll()
 	gtk.Main()
-}
-
-func updateStatusBar(buffer gtk.TextBuffer, statusBar gtk.Statusbar) {
-	// TODO
 }
