@@ -121,7 +121,7 @@ Boston, MA 02111-1307, USA.
 	transparent := pixBuf.AddAlpha(true, 0xff, 0xff, 0xff)
 
 	about := gtk.NewAboutDialog()
-	about.SetParent(_window)
+	about.SetTransientFor(_window)
 	about.SetProgramName("Gtk+ Code Demos")
 	about.SetVersion("0.1")
 	about.SetCopyright("(C) 2010 The PyGI Team")
@@ -137,7 +137,6 @@ Boston, MA 02111-1307, USA.
 	// documenters
 	documentersArr := gi.NewCStrArrayZTWithStrings(documenters...)
 	defer documentersArr.FreeAll()
-
 	about.SetDocumenters(documentersArr)
 
 	about.SetLogo(transparent)
