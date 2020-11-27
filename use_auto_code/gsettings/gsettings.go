@@ -21,7 +21,10 @@ func main() {
 		str := val.Print(true)
 		log.Println(str)
 	})
-	val := g.NewValueT(g.TYPE_STRING)
+	val, err := g.NewValueT(g.TYPE_STRING)
+	if err != nil {
+		log.Fatal(err)
+	}
 	gs.GetProperty("path", val)
 	path := val.GetString()
 
@@ -36,7 +39,10 @@ func main() {
 	log.Println("schema:", schema)
 	log.Println("schema-id:", schemaId)
 
-	valObj := g.NewValueT(g.SettingsSchemaGetType())
+	valObj, err := g.NewValueT(g.SettingsSchemaGetType())
+	if err != nil {
+		log.Fatal(err)
+	}
 	gs.GetProperty("settings-schema", valObj)
 	ss := g.SettingsSchema{P: valObj.GetBoxed()}
 	keysArr := ss.ListKeys()

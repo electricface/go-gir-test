@@ -8,10 +8,13 @@ import (
 )
 
 func main() {
-	val := g.NewValue()
+	val, err := g.NewValue()
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Println("val isValid:", val.IsValid())
 
-	val, err := g.NewValueWith(123)
+	val, err = g.NewValueWith(123)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -56,7 +59,10 @@ func main() {
 
 func main1() {
 	log.Println("new value")
-	val := g.NewValue()
+	val, err := g.NewValue()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	val.Init(g.TYPE_INT)
 	val.SetInt(110)
