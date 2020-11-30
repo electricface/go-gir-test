@@ -157,10 +157,7 @@ func TestReadAllAsyncCh(t *testing.T) {
 
 	ch := make(chan bool)
 	for {
-		iStream.ReadAllAsync(arr, uint64(arr.Len), 0, nil, func(v interface{}) {
-			s := v.(*g.AsyncReadyCallbackStruct)
-			log.Println("done")
-			res := s.F_res
+		iStream.ReadAllAsync(arr, uint64(arr.Len), 0, nil, func(sourceObject g.Object, res g.AsyncResult) {
 			result, bytesRead, err := iStream.ReadAllFinish(res)
 			if err != nil {
 				log.Fatal(err)
@@ -174,6 +171,7 @@ func TestReadAllAsyncCh(t *testing.T) {
 				ch <- true
 			}
 		})
+
 		isEnd := <-ch
 		if isEnd {
 			break
@@ -200,10 +198,8 @@ func TestReadAllAsyncWg(t *testing.T) {
 	for {
 		wg.Add(1)
 		isEnd := false
-		iStream.ReadAllAsync(arr, uint64(arr.Len), 0, nil, func(v interface{}) {
-			s := v.(*g.AsyncReadyCallbackStruct)
-			log.Println("done")
-			res := s.F_res
+
+		iStream.ReadAllAsync(arr, uint64(arr.Len), 0, nil, func(sourceObject g.Object, res g.AsyncResult) {
 			result, bytesRead, err := iStream.ReadAllFinish(res)
 			if err != nil {
 				log.Fatal(err)
@@ -218,6 +214,7 @@ func TestReadAllAsyncWg(t *testing.T) {
 			}
 			wg.Done()
 		})
+
 		wg.Wait()
 		if isEnd {
 			break
