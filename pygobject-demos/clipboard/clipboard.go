@@ -32,8 +32,8 @@ func newClipboardApp() {
 	// create button
 	button := gtk.NewButtonFromStock(gtk.STOCK_COPY)
 	hbox.PackStart(button, false, false, 0)
-	_dataMap["entry1"] = entry
-	button.Connect(gtk.SigClicked, copyButtonClicked)
+	//_dataMap["entry1"] = entry
+	button.Connect(gtk.SigClicked, copyButtonClicked, entry)
 
 	label = gtk.NewLabel("\"Paste\" will paste the text from the clipboard to the entry")
 	vbox.PackStart(label, false, false, 0)
@@ -48,8 +48,7 @@ func newClipboardApp() {
 	// create button
 	button = gtk.NewButtonFromStock(gtk.STOCK_PASTE)
 	hbox.PackStart(button, false, false, 0)
-	_dataMap["entry2"] = entry
-	button.Connect(gtk.SigClicked, pasteButtonClicked)
+	button.Connect(gtk.SigClicked, pasteButtonClicked, entry)
 
 	label = gtk.NewLabel("Images can be transferred via the clipboard, too")
 	vbox.PackStart(label, false, false, 0)
@@ -68,17 +67,16 @@ func newClipboardApp() {
 	ebox.DragSourceSet(gdk.ModifierTypeButton1Mask, nil, 0,
 		gdk.DragActionCopy)
 	ebox.DragSourceAddImageTargets()
-	_dataMap["image1"] = image
-	ebox.Connect(gtk.SigDragBegin, dragBegin)
-	ebox.Connect(gtk.SigDragDataGet, dragDataGet)
+	ebox.Connect(gtk.SigDragBegin, dragBegin, image)
+	ebox.Connect(gtk.SigDragDataGet, dragDataGet, image)
 
 	// accept drops on ebox
 	ebox.DragDestSet(gtk.DestDefaultsAll, nil, 0, gdk.DragActionCopy)
 	ebox.DragDestAddImageTargets()
-	ebox.Connect(gtk.SigDragDataReceived, dragDataReceived)
+	ebox.Connect(gtk.SigDragDataReceived, dragDataReceived, image)
 
 	// context menu on ebox
-	ebox.Connect(gtk.SigButtonPressEvent, buttonPress)
+	ebox.Connect(gtk.SigButtonPressEvent, buttonPress, image)
 
 	// ----------------------------------
 	// image 2
@@ -93,17 +91,16 @@ func newClipboardApp() {
 	ebox.DragSourceSet(gdk.ModifierTypeButton1Mask, nil, 0,
 		gdk.DragActionCopy)
 	ebox.DragSourceAddImageTargets()
-	_dataMap["image2"] = image
-	ebox.Connect(gtk.SigDragBegin, dragBegin2)
-	ebox.Connect(gtk.SigDragDataGet, dragDataGet2)
+	ebox.Connect(gtk.SigDragBegin, dragBegin, image)
+	ebox.Connect(gtk.SigDragDataGet, dragDataGet, image)
 
 	// accept drops on ebox
 	ebox.DragDestSet(gtk.DestDefaultsAll, nil, 0, gdk.DragActionCopy)
 	ebox.DragDestAddImageTargets()
-	ebox.Connect(gtk.SigDragDataReceived, dragDataReceived2)
+	ebox.Connect(gtk.SigDragDataReceived, dragDataReceived, image)
 
 	// context menu on ebox
-	ebox.Connect(gtk.SigButtonPressEvent, buttonPress2)
+	ebox.Connect(gtk.SigButtonPressEvent, buttonPress, image)
 
 	atom := gdk.AtomIntern("CLIPBOARD", true)
 	clipboard := gtk.ClipboardGet1(atom)
@@ -112,12 +109,12 @@ func newClipboardApp() {
 	window.ShowAll()
 }
 
-func buttonPress(args []interface{}) interface{} {
+func buttonPress(p gi.ParamBox) interface{} {
 	var s struct {
 		Widget gtk.Widget
 		Event  gdk.Event
 	}
-	err := gi.StoreStruct(args, &s)
+	err := p.StoreStruct(&s)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,15 +122,17 @@ func buttonPress(args []interface{}) interface{} {
 	if button != 3 {
 		return false
 	}
+
+	image := p.UserData.(gtk.Image)
 	menu := gtk.NewMenu()
 
 	item := gtk.NewImageMenuItemFromStock(gtk.STOCK_COPY, nil)
-	item.Connect(gtk.SigActivate, copyImage)
+	item.Connect(gtk.SigActivate, copyImage, image)
 	item.Show()
 	menu.Append(item)
 
 	item = gtk.NewImageMenuItemFromStock(gtk.STOCK_PASTE, nil)
-	item.Connect(gtk.SigActivate, pasteImage)
+	item.Connect(gtk.SigActivate, pasteImage, image)
 	item.Show()
 	menu.Append(item)
 
@@ -142,100 +141,37 @@ func buttonPress(args []interface{}) interface{} {
 	return false
 }
 
-func buttonPress2(args []interface{}) interface{} {
-	var s struct {
-		Widget gtk.Widget
-		Event  gdk.Event
-	}
-	err := gi.StoreStruct(args, &s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, button := s.Event.GetButton()
-	if button != 3 {
-		return false
-	}
-	menu := gtk.NewMenu()
-
-	item := gtk.NewImageMenuItemFromStock(gtk.STOCK_COPY, nil)
-	item.Connect(gtk.SigActivate, copyImage2)
-	item.Show()
-	menu.Append(item)
-
-	item = gtk.NewImageMenuItemFromStock(gtk.STOCK_PASTE, nil)
-	item.Connect(gtk.SigActivate, pasteImage2)
-	item.Show()
-	menu.Append(item)
-
-	time1 := s.Event.GetTime()
-	menu.Popup(nil, nil, nil, button, time1)
-	return false
-}
-
-func copyImage() {
+func copyImage(p gi.ParamBox) {
 	// get the default clipboard
 	atom := gdk.AtomIntern("CLIPBOARD", true)
 	clipboard := gtk.ClipboardGet1(atom)
-	image := _dataMap["image1"].(gtk.Image)
+	image := p.UserData.(gtk.Image)
 	pixbuf := getImagePixBuf(image)
 	clipboard.SetImage(pixbuf)
 }
 
-func pasteImage() {
+func pasteImage(p gi.ParamBox) {
 	// get the default clipboard
 	atom := gdk.AtomIntern("CLIPBOARD", true)
 	clipboard := gtk.ClipboardGet1(atom)
-	pixbuf := clipboard.WaitForImage()
+	pixBuf := clipboard.WaitForImage()
 
-	if pixbuf.P != nil {
-		image := _dataMap["image1"].(gtk.Image)
-		image.SetFromPixbuf(pixbuf)
+	if pixBuf.P != nil {
+		image := p.UserData.(gtk.Image)
+		image.SetFromPixbuf(pixBuf)
 	}
 }
 
-func copyImage2() {
-	// get the default clipboard
-	atom := gdk.AtomIntern("CLIPBOARD", true)
-	clipboard := gtk.ClipboardGet1(atom)
-	image := _dataMap["image2"].(gtk.Image)
-	pixbuf := getImagePixBuf(image)
-	clipboard.SetImage(pixbuf)
-}
-
-func pasteImage2() {
-	// get the default clipboard
-	atom := gdk.AtomIntern("CLIPBOARD", true)
-	clipboard := gtk.ClipboardGet1(atom)
-	pixbuf := clipboard.WaitForImage()
-
-	if pixbuf.P != nil {
-		image := _dataMap["image2"].(gtk.Image)
-		image.SetFromPixbuf(pixbuf)
-	}
-}
-
-func dragBegin(args []interface{}) {
+func dragBegin(p gi.ParamBox) {
 	var widget gtk.Widget
 	var ctx gdk.DragContext
-	err := gi.Store(args, &widget, &ctx)
+	err := p.Store(&widget, &ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	image := _dataMap["image1"].(gtk.Image)
-	pixbuf := getImagePixBuf(image)
-	gtk.DragSetIconPixbuf(ctx, pixbuf, -2, -2)
-}
-
-func dragBegin2(args []interface{}) {
-	var widget gtk.Widget
-	var ctx gdk.DragContext
-	err := gi.Store(args, &widget, &ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	image := _dataMap["image2"].(gtk.Image)
-	pixbuf := getImagePixBuf(image)
-	gtk.DragSetIconPixbuf(ctx, pixbuf, -2, -2)
+	image := p.UserData.(gtk.Image)
+	pixBuf := getImagePixBuf(image)
+	gtk.DragSetIconPixbuf(ctx, pixBuf, -2, -2)
 }
 
 func getImagePixBuf(image gtk.Image) gdkpixbuf.Pixbuf {
@@ -249,7 +185,7 @@ func getImagePixBuf(image gtk.Image) gdkpixbuf.Pixbuf {
 	return gdkpixbuf.Pixbuf{}
 }
 
-func dragDataGet(args []interface{}) {
+func dragDataGet(p gi.ParamBox) {
 	var s struct {
 		Widget gtk.Widget
 		Ctx    gdk.DragContext
@@ -257,33 +193,16 @@ func dragDataGet(args []interface{}) {
 		Info   uint32
 		Time   uint32
 	}
-	err := gi.StoreStruct(args, &s)
+	err := p.StoreStruct(&s)
 	if err != nil {
 		log.Fatal(err)
 	}
-	image := _dataMap["image1"].(gtk.Image)
-	pixbuf := getImagePixBuf(image)
-	s.Data.SetPixbuf(pixbuf)
+	image := p.UserData.(gtk.Image)
+	pixBuf := getImagePixBuf(image)
+	s.Data.SetPixbuf(pixBuf)
 }
 
-func dragDataGet2(args []interface{}) {
-	var s struct {
-		Widget gtk.Widget
-		Ctx    gdk.DragContext
-		Data   gtk.SelectionData
-		Info   uint32
-		Time   uint32
-	}
-	err := gi.StoreStruct(args, &s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	image := _dataMap["image2"].(gtk.Image)
-	pixbuf := getImagePixBuf(image)
-	s.Data.SetPixbuf(pixbuf)
-}
-
-func dragDataReceived(args []interface{}) {
+func dragDataReceived(p gi.ParamBox) {
 	var s struct {
 		Widget gtk.Widget
 		Ctx    gdk.DragContext
@@ -293,44 +212,19 @@ func dragDataReceived(args []interface{}) {
 		Info   uint32
 		Time   uint32
 	}
-	// var s gtk.WidgetSigArgsDragDataReceived
-	err := gi.StoreStruct(args, &s)
+	err := p.StoreStruct(&s)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if s.Data.GetLength() > 0 {
-		pixbuf := s.Data.GetPixbuf()
-		image := _dataMap["image1"].(gtk.Image)
-		image.SetFromPixbuf(pixbuf)
+		pixBuf := s.Data.GetPixbuf()
+		image := p.UserData.(gtk.Image)
+		image.SetFromPixbuf(pixBuf)
 	}
 }
 
-func dragDataReceived2(args []interface{}) {
-	var s struct {
-		Widget gtk.Widget
-		Ctx    gdk.DragContext
-		X      int32
-		Y      int32
-		Data   gtk.SelectionData
-		Info   uint32
-		Time   uint32
-	}
-	// var s gtk.WidgetSigArgsDragDataReceived
-	err := gi.StoreStruct(args, &s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if s.Data.GetLength() > 0 {
-		pixbuf := s.Data.GetPixbuf()
-		image := _dataMap["image2"].(gtk.Image)
-		image.SetFromPixbuf(pixbuf)
-	}
-}
-
-var _dataMap = make(map[string]interface{})
-
-func copyButtonClicked() {
-	entry := _dataMap["entry1"].(gtk.Entry)
+func copyButtonClicked(p gi.ParamBox) {
+	entry := p.UserData.(gtk.Entry)
 	// get the default clipboard
 	atom := gdk.AtomIntern("CLIPBOARD", true)
 	clipboard := entry.GetClipboard(atom)
@@ -339,23 +233,19 @@ func copyButtonClicked() {
 	clipboard.SetText(entry.GetText(), -1)
 }
 
-func pasteButtonClicked() {
-	entry := _dataMap["entry2"].(gtk.Entry)
+func pasteButtonClicked(p gi.ParamBox) {
+	entry := p.UserData.(gtk.Entry)
 
 	// get the default clipboard
 	atom := gdk.AtomIntern("CLIPBOARD", true)
 	clipboard := entry.GetClipboard(atom)
 
 	// set the clipboard's text
-	clipboard.RequestText(pasteReceived)
-}
-
-func pasteReceived(clipboard gtk.Clipboard, text string) {
-	entry := _dataMap["entry2"].(gtk.Entry)
-
-	if text != "" {
-		entry.SetText(text)
-	}
+	clipboard.RequestText(func(clipboard gtk.Clipboard, text string) {
+		if text != "" {
+			entry.SetText(text)
+		}
+	})
 }
 
 func main() {
