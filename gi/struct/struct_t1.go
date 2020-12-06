@@ -50,16 +50,45 @@ func main() {
 	nf := psi0.NumFields()
 	log.Println("num fields:", nf)
 
-	vtf := psi0.FindField("flags")
-	if vtf.P == nil {
-		log.Fatalln("vtf is nil")
+	//vtf := psi0.FindField("flags")
+	//if vtf.P == nil {
+	//	log.Fatalln("vtf is nil")
+	//}
+
+	//vt, ok := vtf.GetField(win.P)
+	//if ok {
+	//	log.Println("get field ok")
+	//	log.Println(vt.Int64())
+	//} else {
+	//	log.Println("get field not ok")
+	//}
+
+	_, err = r.Require("Gdk", "3.0", gi.REPOSITORY_LOAD_FLAG_LAZY)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	vt, ok := vtf.GetField(win.P)
-	if ok {
-		log.Println("get field ok")
-		log.Println(vt.Int64())
-	} else {
-		log.Println("get field not ok")
+	rgba := r.FindByName("Gdk", "RGBA")
+	name := rgba.Name()
+	log.Println(name)
+	rgbas := gi.WrapStructInfo(rgba.P)
+	num := rgbas.NumFields()
+	log.Println(num)
+	for i := 0; i < num; i++ {
+		f := rgbas.Field(i)
+		fn := f.Name()
+		log.Println(i, fn)
+	}
+
+	ev := r.FindByName("Gdk", "Event")
+	name = rgba.Name()
+	log.Println(name)
+	evs := gi.WrapUnionInfo(ev.P)
+	num = evs.NumFields()
+	log.Println(num)
+	for i := 0; i < num; i++ {
+		f := evs.Field(i)
+		fn := f.Name()
+		log.Println(i, fn)
 	}
 }
