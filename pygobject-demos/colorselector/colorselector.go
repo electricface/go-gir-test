@@ -21,6 +21,10 @@ func newColorSelectorApp() {
 	app := &ColorSelectorApp{}
 
 	color := gdk.RGBA{P: gi.SliceAlloc0(gdk.SizeOfStructRGBA)}
+	color.SetAlpha(1)
+	color.SetRed(1)
+	color.SetGreen(0)
+	color.SetBlue(0)
 	app.color = color
 
 	window := gtk.NewWindow(gtk.WindowTypeToplevel)
@@ -67,11 +71,13 @@ func drawCb(p gi.ParamBox) {
 		log.Fatal(err)
 	}
 	style := s.Widget.GetStyleContext()
+
 	bgColor := gdk.RGBA{P: gi.SliceAlloc0(gdk.SizeOfStructRGBA)}
 	defer gi.SliceFree(gdk.SizeOfStructRGBA, bgColor.P)
+
 	style.GetBackgroundColor(0, bgColor)
 	ctx := cairo.WrapContext(s.Cr)
-	ctx.SetSourceRGBA(1, 0, 1, 1)
+	ctx.SetSourceRGBA(bgColor.Red(), bgColor.Green(), bgColor.Blue(), bgColor.Alpha())
 	ctx.Paint()
 }
 
