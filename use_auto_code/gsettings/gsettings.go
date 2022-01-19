@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/linuxdeepin/go-gir/g-2.0"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/g-2.0"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 func main() {

@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/linuxdeepin/go-gir/g-2.0"
-	gi "github.com/linuxdeepin/go-gir/gi"
+	"github.com/electricface/go-gir/g-2.0"
+	gi "github.com/electricface/go-gir/gi"
 )
 
 func main() {

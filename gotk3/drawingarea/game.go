@@ -5,8 +5,8 @@ import (
 	"unsafe"
 
 	"github.com/electricface/go-gir3/cairo"
-	"github.com/linuxdeepin/go-gir/gdk-3.0"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/gdk-3.0"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 const (

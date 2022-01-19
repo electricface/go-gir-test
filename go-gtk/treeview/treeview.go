@@ -6,10 +6,10 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/linuxdeepin/go-gir/g-2.0"
-	"github.com/linuxdeepin/go-gir/gdkpixbuf-2.0"
-	gi "github.com/linuxdeepin/go-gir/gi"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/g-2.0"
+	"github.com/electricface/go-gir/gdkpixbuf-2.0"
+	gi "github.com/electricface/go-gir/gi"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 func main() {

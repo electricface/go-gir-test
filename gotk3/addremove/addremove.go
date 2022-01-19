@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 var labelList = list.New()

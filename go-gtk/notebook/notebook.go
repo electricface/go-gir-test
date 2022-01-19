@@ -3,7 +3,7 @@ package main
 import (
 	"strconv"
 
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 func main() {

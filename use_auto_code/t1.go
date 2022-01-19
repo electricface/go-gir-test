@@ -5,8 +5,8 @@ import (
 	"log"
 	"unsafe"
 
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
-	"github.com/linuxdeepin/go-gir/gi"
+	"github.com/electricface/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/gi"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/linuxdeepin/go-gir/gi"
+	"github.com/electricface/go-gir/gi"
 )
 
 func main() {

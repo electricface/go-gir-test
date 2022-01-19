@@ -24,7 +24,7 @@ package main
 import (
 	"log"
 
-	"github.com/linuxdeepin/go-gir/girepository-2.0"
+	"github.com/electricface/go-gir/girepository-2.0"
 )
 
 func main() {

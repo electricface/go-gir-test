@@ -12,7 +12,7 @@ import (
 	"unsafe"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/linuxdeepin/go-gir/gi"
+	"github.com/electricface/go-gir/gi"
 )
 
 // Struct AttrSize

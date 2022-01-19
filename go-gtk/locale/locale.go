@@ -6,7 +6,7 @@ import (
 	"pkg.deepin.io/lib/gettext"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/linuxdeepin/go-gir/g-2.0"
+	"github.com/electricface/go-gir/g-2.0"
 )
 
 func main() {

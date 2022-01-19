@@ -5,8 +5,8 @@ import (
 	"log"
 	"unsafe"
 
-	"github.com/linuxdeepin/go-gir/g-2.0"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/g-2.0"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 func menuPositionFn(menu gtk.Menu, xP unsafe.Pointer, yP unsafe.Pointer) (pushIn bool) {

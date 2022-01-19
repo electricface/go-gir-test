@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/electricface/go-gir3/gi"
 
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
-	gsv "github.com/linuxdeepin/go-gir/gtksource-4"
+	"github.com/electricface/go-gir/gtk-3.0"
+	gsv "github.com/electricface/go-gir/gtksource-4"
 )
 
 func main() {

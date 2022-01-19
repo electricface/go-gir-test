@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	"github.com/linuxdeepin/go-gir/gdk-3.0"
-	"github.com/linuxdeepin/go-gir/gdkpixbuf-2.0"
-	"github.com/linuxdeepin/go-gir/gi"
-	"github.com/linuxdeepin/go-gir/gtk-3.0"
+	"github.com/electricface/go-gir/gdk-3.0"
+	"github.com/electricface/go-gir/gdkpixbuf-2.0"
+	"github.com/electricface/go-gir/gi"
+	"github.com/electricface/go-gir/gtk-3.0"
 )
 
 func newClipboardApp() {

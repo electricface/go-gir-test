@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/linuxdeepin/go-gir/gi"
+	"github.com/electricface/go-gir/gi"
 )
 
 type DestroyNotify func(ptr unsafe.Pointer) int

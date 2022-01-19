@@ -1,6 +1,6 @@
 package main
 
-import "github.com/linuxdeepin/go-gir/gtk-3.0"
+import "github.com/electricface/go-gir/gtk-3.0"
 
 func main() {
 	gtk.Init(0, 0)
