@@ -5,9 +5,8 @@ import (
 	"log"
 	"unsafe"
 
-	"github.com/electricface/go-gir3/gi"
-
 	"github.com/electricface/go-gir/gdk-3.0"
+	"github.com/electricface/go-gir/gi"
 	"github.com/electricface/go-gir/gtk-3.0"
 )
 
@@ -53,8 +52,8 @@ func main() {
 	//	}
 	//})
 
-	textview.Connect(gtk.SigEventAfter, func(args []interface{}) {
-		evP := args[1].(unsafe.Pointer)
+	textview.Connect(gtk.SigEventAfter, func(b gi.ParamBox) {
+		evP := b.Params[1].(unsafe.Pointer)
 		ev := gdk.Event{P: evP}
 		type0 := ev.GetEventType()
 		if type0 != gdk.EventTypeButtonRelease {

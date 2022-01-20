@@ -11,9 +11,6 @@ func main() {
 	window := gtk.NewWindow(gtk.WindowTypeToplevel)
 	window.SetPosition(gtk.WindowPositionCenter)
 	window.SetTitle("GTK Go!")
-	//window.Connect(gtk.SigDestroy, func(ctx *glib.CallbackContext) {
-	//	gtk.MainQuit()
-	//}, "")
 	window.Connect(gtk.SigDestroy, gtk.MainQuit)
 
 	vbox := gtk.NewVBox(false, 0)

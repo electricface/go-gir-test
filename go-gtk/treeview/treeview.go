@@ -39,7 +39,10 @@ func main() {
 	for n := 1; n <= 10; n++ {
 		store.Append(iter1, gtk.TreeIter{})
 		p1 := gtk.NewImage().RenderIcon(gtk.STOCK_DIRECTORY, int32(gtk.IconSizeSmallToolbar), "")
-		v1 := g.NewValueT(gdkpixbuf.PixbufGetType())
+		v1, err := g.NewValueT(gdkpixbuf.PixbufGetType())
+		if err != nil {
+			log.Fatal(err)
+		}
 		v1.SetObject(p1)
 		store.SetValue(iter1, 0, v1)
 
@@ -51,7 +54,10 @@ func main() {
 
 		store.Append(iter2, iter1)
 		p1 = gtk.NewImage().RenderIcon(gtk.STOCK_DIRECTORY, int32(gtk.IconSizeSmallToolbar), "")
-		v1 = g.NewValueT(gdkpixbuf.PixbufGetType())
+		v1, err = g.NewValueT(gdkpixbuf.PixbufGetType())
+		if err != nil {
+			log.Fatal(err)
+		}
 		v1.SetObject(p1)
 		store.SetValue(iter2, 0, v1)
 
@@ -63,7 +69,10 @@ func main() {
 
 		store.Append(iter3, iter2)
 		p1 = gtk.NewImage().RenderIcon(gtk.STOCK_FILE, int32(gtk.IconSizeSmallToolbar), "")
-		v1 = g.NewValueT(gdkpixbuf.PixbufGetType())
+		v1, err = g.NewValueT(gdkpixbuf.PixbufGetType())
+		if err != nil {
+			log.Fatal(err)
+		}
 		v1.SetObject(p1)
 		store.SetValue(iter3, 0, v1)
 
